@@ -1,28 +1,26 @@
 const Tour = require('../models/tour.model');
+const APIFeatures = require('../utils/tourFeatures.utils')
 
 // not required anymore bcz now we are working with db ->
 // const tours = JSON.parse(fs.readFileSync(`${__dirname}/../dev-data/data/tours-simple.json`));
 
+const aliasTopTours = (req, res, next) => {
+  req.query.limit = '5';
+  req.query.sort = '-ratings Average, price';
+  req.query.fields = 'name, price, ratingsAverage, summary, difficulty';
+  next();
+};
+
 const getAllTours = async (req, res) => {
-  // .where('duration')
-  // .lte(duration)
-  // .where('difficulty')
-  // .equals(difficulty);
-
   try {
-    const queryObj = { ...req.query };
-    const excludedFields = ['page', 'limit', 'sort', 'fields'];
-    excludedFields.forEach((ele) => delete queryObj[ele]);
+    // Execute the query ->
 
-    // Advance filtering ->
-    let queryStr = JSON.stringify(queryObj);
-    console.log('first ', queryStr)
-    queryStr = queryStr.replace(/\b(gt|gte|lt|lte)\b/g,  (match) => `$${match}`)
-    queryStr = JSON.parse(queryStr)
-    console.log(queryStr)
-    const query = Tour.find(queryStr);
-
-    const tourData = await query;
+    const features = new APIFeatures(Tour.find(), req.query)
+      .filter()
+      .sort()
+      .limitFields()
+      .paginate();
+    const tourData = await features.query;
 
     res.status(200).json({
       tourLength: tourData.length,
@@ -106,6 +104,7 @@ module.exports = {
   addNewTour,
   deleteATour,
   updateTour,
+  aliasTopTours,
 };
 
 // const addNewTour = (req, res) => {
