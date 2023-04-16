@@ -4,8 +4,26 @@ const Tour = require('../models/tour.model');
 // const tours = JSON.parse(fs.readFileSync(`${__dirname}/../dev-data/data/tours-simple.json`));
 
 const getAllTours = async (req, res) => {
+  // .where('duration')
+  // .lte(duration)
+  // .where('difficulty')
+  // .equals(difficulty);
+
   try {
-    const tourData = await Tour.find();
+    const queryObj = { ...req.query };
+    const excludedFields = ['page', 'limit', 'sort', 'fields'];
+    excludedFields.forEach((ele) => delete queryObj[ele]);
+
+    // Advance filtering ->
+    let queryStr = JSON.stringify(queryObj);
+    console.log('first ', queryStr)
+    queryStr = queryStr.replace(/\b(gt|gte|lt|lte)\b/g,  (match) => `$${match}`)
+    queryStr = JSON.parse(queryStr)
+    console.log(queryStr)
+    const query = Tour.find(queryStr);
+
+    const tourData = await query;
+
     res.status(200).json({
       tourLength: tourData.length,
       data: {
@@ -60,35 +78,34 @@ const deleteATour = async (req, res) => {
   } catch (error) {
     await Tour.findOneAndDelete({ name: id });
     res.status(200).json({
-      message: 'Not a valid tour'
+      message: 'Not a valid tour',
     });
-    
   }
 };
 
 const updateTour = async (req, res) => {
-   try{
+  try {
     const updateData = await Tour.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
-      runValidators: true
-      })
-      res.status(200).json({
-        message:"Tour updated successfully",
-        tour: updateTour
-      })
-   }catch(error){
+      runValidators: true,
+    });
+    res.status(200).json({
+      message: 'Tour updated successfully',
+      tour: updateTour,
+    });
+  } catch (error) {
     res.status(400).json({
-      message: "Something bad happend, I also dont know"
-    })
-   }
-}
+      message: 'Something bad happend, I also dont know',
+    });
+  }
+};
 
 module.exports = {
   getAllTours,
   getSingleTour,
   addNewTour,
   deleteATour,
-  updateTour
+  updateTour,
 };
 
 // const addNewTour = (req, res) => {
